@@ -2,7 +2,7 @@
 
 <img src="tools/scene.preview.svg" alt="星空、流星雨與山丘上點亮的古希臘衛城" width="720">
 
-替 Claude Desktop 的 Code 分頁換上一片古希臘的夜空：深藍的天、亮金的字色、大理石白的文字。星星慢慢閃，銀河斜斜劃過，右上方不時落下一場安靜的流星雨；右下角的岩石台地上，衛城的城牆由下往上打著暖光，山腳是一片小小的城市燈火。切到淺色模式，就變成淡藍的白天，雲慢慢飄，衛城換成大理石白。
+替 Claude Desktop 的 Code 分頁換上一片古希臘的夜空：深藍的天、亮金的點綴、大理石白的文字。星星慢慢閃，銀河斜斜劃過，右上方不時落下一場安靜的流星雨；右下角的岩石台地上，衛城的城牆由下往上打著暖光，山腳是一片小小的城市燈火。切到淺色模式，就變成淡藍的白天，雲慢慢飄，衛城換成大理石白。
 
 A theme mod for the Claude Desktop Code tab: a night sky over an ancient Greek acropolis, with slow twinkling stars, the milky way and a gentle meteor shower; by day, a pale blue sky with soft clouds. Colors for both light and dark mode, and a moving vector backdrop.
 
@@ -28,7 +28,7 @@ claude plugin install starry-acropolis-theme --marketplace guinea19820623-star/s
 
 ## 你會看到 What you get
 
-- **深色 Dark**：夜空藍的底、暖白的字、亮金的強調色；紅、綠、琥珀仍保留原本的意思，只往這個色調靠。星星分五組錯開閃爍，七顆四芒亮星，十顆流星從右上方的輻射點往外放射，平均約三秒一顆。
+- **深色 Dark**：夜空藍的底、暖白的字、亮金的強調色（例如程式碼的關鍵字）；紅、綠、琥珀仍保留原本的意思，只往這個色調靠。星星分五組錯開閃爍，七顆四芒亮星，十顆流星從右上方的輻射點往外放射，平均約三秒一顆。
 - **淺色 Light**：暖米白的底、深藍灰的字、金色強調；淡藍天空、幾團柔雲、右下角的晨光。
 - **衛城 Acropolis**：釘在畫面右下角，避開中間的文字和下方的輸入框，視窗寬窄都會跟著縮放。
 - **減少動態 Reduced motion**：系統開了減少動態時，畫面停成完整的靜態畫，流星會藏起來。
