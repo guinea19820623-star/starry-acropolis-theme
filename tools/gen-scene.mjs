@@ -1,6 +1,8 @@
-// Generates the backdrop scene for 撫子的星空主題 and writes it as hooks/scene.js.
-// Run from the mod folder: node tools/gen-scene.mjs hooks/scene.js
-// It also writes tools/scene.preview.svg to open in a browser.
+// Generates the parts of the backdrop that do not change with the time of day
+// (stars, meteors, clouds and the acropolis in its day, shaded and lit forms)
+// and writes them to hooks/parts.js. hooks/sky.js puts them together with the
+// sky's colours for the moment it is drawn.
+// Run from the mod folder: node tools/gen-scene.mjs hooks/parts.js
 import { writeFileSync } from 'node:fs'
 
 const out = process.argv[2]
@@ -125,7 +127,7 @@ const cypress = (x, base, h, w) =>
 const trees = [
   cypress(1070, 930, 70, 16), cypress(1090, 936, 52, 13), cypress(1046, 950, 44, 12),
   cypress(1540, 900, 64, 15), cypress(1560, 908, 46, 12), cypress(1500, 935, 40, 11),
-  cypress(1196, 822, 24, 7), cypress(1466, 822, 22, 6),
+  cypress(1198, 837, 26, 7), cypress(1470, 837, 24, 6),
 ].join('')
 
 // City lights at the foot of the rock: little windows and street lamps.
@@ -150,13 +152,41 @@ const masonry = []
 for (let y = 842; y < 866; y += 6) masonry.push(`M${1118 + (y - 842)} ${y}H${f(1514 - (y - 842) * 0.6)}`)
 
 
-const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="100%" height="100%">
-<style>
-.sky{fill:url(#skyN)}
-.glow{fill:url(#horN)}
-.mtA{fill:url(#mtAN)}
-.mtB{fill:#121536}
-.st circle{fill:#eef0ff}
+// ======================= acropolis in three forms =======================
+// c(name) gives the class for a part, or nothing for the silhouette, which
+// takes one fill from its group.
+const acro = (c, form) => {
+  const lit = form === 'night'
+  const shade = form === 'shade'
+  return [
+    shade ? '' : `<ellipse${c('tglow')} cx="1320" cy="820" rx="330" ry="150"/>`,
+    `<path${c('rock')} d="M960 1010C990 980 1030 950 1062 922C1078 906 1090 892 1098 874L1108 846L1116 838L1200 836L1300 834L1420 835L1516 837L1526 846L1540 868C1558 884 1584 896 1610 904V1010Z"/>`,
+    `<path${c('wall')} d="M1116 838L1200 836L1300 834L1420 835L1516 837L1526 850L1518 858L1490 862L1470 870L1420 868L1380 874L1330 870L1280 876L1230 871L1190 875L1150 869L1124 866L1110 856Z"/>`,
+    shade ? '' : `<path${c('mason')} d="${masonry.join('')}"/>`,
+    lit ? `<g class="house">${houses.join('')}</g>` : '',
+    lit ? `<g class="lit"><g class="la">${lightsA}</g><g class="lb">${lightsB}</g></g>` : '',
+    `<g${c('tree')}>${trees}</g>`,
+    `<rect${c('cella')} x="1128" y="818" width="46" height="18"/>`,
+    `<g${c('col')}>${smallCols(1130, 6, 8, 818, 18, 4)}</g>`,
+    `<rect${c('ent')} x="1124" y="812" width="54" height="6"/>`,
+    `<rect${c('cella')} x="1180" y="814" width="34" height="22"/>`,
+    `<g${c('col')}>${smallCols(1182, 5, 7.5, 816, 20, 4)}</g>`,
+    `<rect${c('ent')} x="1176" y="810" width="42" height="6"/>`,
+    `<rect${c('cella')} x="${P.left + 6}" y="${P.base - P.colH}" width="${P.right - P.left - 12}" height="${P.colH}"/>`,
+    `<rect${c('base')} x="${P.left - 12}" y="${P.base + 6}" width="${P.right - P.left + 24}" height="5"/>`,
+    `<rect${c('base')} x="${P.left - 8}" y="${P.base + 3}" width="${P.right - P.left + 16}" height="4"/>`,
+    `<rect${c('base')} x="${P.left - 4}" y="${P.base}" width="${P.right - P.left + 8}" height="4"/>`,
+    `<g${c('col')}>${pCols.join('')}</g>`,
+    `<rect${c('ent')} x="${P.left - 6}" y="${P.base - P.colH - 15}" width="${P.right - P.left + 12}" height="12"/>`,
+    `<path${c('ped')} d="M${P.left - 10} ${P.base - P.colH - 15}L${(P.left + P.right) / 2} ${P.base - P.colH - 44}L${P.right + 10} ${P.base - P.colH - 15}Z"/>`,
+    shade ? '' : `<path${c('edge')} d="M${P.left - 6} ${P.base - P.colH - 9}H${P.right + 6}M${P.left - 10} ${P.base - P.colH - 15}L${(P.left + P.right) / 2} ${P.base - P.colH - 44}L${P.right + 10} ${P.base - P.colH - 15}"/>`,
+  ].join('')
+}
+const day = n => ` class="d${n}"`
+const night = n => ` class="n${n}"`
+const none = () => ''
+
+const STYLE = `.st circle{fill:#eef0ff}
 .st .w{fill:#ffe0a0}
 .st .b{fill:#cfe0ff}
 .dust circle{fill:#d8d2f4;opacity:0.3}
@@ -168,21 +198,31 @@ const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="100%" height="100%">
 .sp path{fill:#fff3d2}
 .sph{fill:url(#spg)}
 .wisp{fill:url(#wispN)}
-.rock{fill:url(#rockN)}
-.wall{fill:url(#wallN)}
-.mason{stroke:#3a2716;stroke-width:0.7;opacity:0.35;fill:none}
-.tree{fill:#090c22}
+.mv{opacity:0}
+.drock{fill:url(#rockD)}
+.dwall{fill:url(#wallD)}
+.dmason{stroke:#a8987a;stroke-width:0.7;opacity:0.4;fill:none}
+.dtree{fill:#7d8a72}
+.dtglow{fill:url(#tgD)}
+.dcella{fill:#d3c8b3}
+.dcol{fill:#f8f4ec;stroke:#a99a7e;stroke-width:0.6}
+.dent{fill:#f3eee4;stroke:#a99a7e;stroke-width:0.6}
+.dped{fill:#eee7da;stroke:#a99a7e;stroke-width:0.6}
+.dedge{stroke:#c29a4e;stroke-width:0.9;fill:none;opacity:0.6}
+.dbase{fill:#e9e1d1;stroke:#a99a7e;stroke-width:0.6}
+.nrock{fill:url(#rockN)}
+.nwall{fill:url(#wallN)}
+.nmason{stroke:#3a2716;stroke-width:0.7;opacity:0.35;fill:none}
+.ntree{fill:#090c22}
 .house{fill:#2a2340;opacity:0.9}
 .lit circle{fill:#ffcf72}
-.tglow{fill:url(#tg)}
-.cella{fill:url(#cellaN)}
-.col{fill:url(#colN)}
-.ent{fill:#b07a3c}
-.ped{fill:#9a6a34}
-.edge{stroke:#ffe2a0;stroke-width:0.9;fill:none;opacity:0.8}
-.base{fill:#d9a556}
-.day{display:none}
-.mv{opacity:0}
+.ntglow{fill:url(#tg)}
+.ncella{fill:url(#cellaN)}
+.ncol{fill:url(#colN)}
+.nent{fill:#b07a3c}
+.nped{fill:#9a6a34}
+.nedge{stroke:#ffe2a0;stroke-width:0.9;fill:none;opacity:0.8}
+.nbase{fill:#d9a556}
 @keyframes tw{0%,100%{opacity:0.95}50%{opacity:0.35}}
 @keyframes spk{0%,100%{opacity:1;transform:scale(1)}50%{opacity:0.55;transform:scale(0.72)}}
 @keyframes br{0%,100%{opacity:0.75}50%{opacity:1}}
@@ -200,54 +240,13 @@ const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="100%" height="100%">
 .p2>*{animation:spk 7s ease-in-out -1s infinite}
 .p3>*{animation:spk 9s ease-in-out -4s infinite}
 .p4>*{animation:spk 5s ease-in-out -2s infinite}
-.tglow{animation:br 10s ease-in-out infinite}
+.ntglow{animation:br 10s ease-in-out infinite}
 .la{animation:flick 6s ease-in-out infinite}
 .lb{animation:flick 8s ease-in-out -3s infinite}
 ${meteorCss.join('\n')}
-.drift{animation:drift 80s ease-in-out infinite alternate}
-@media (prefers-color-scheme: light){
-.sky{fill:url(#skyD)}
-.glow{fill:url(#horD)}
-.mtA{fill:#cbd3de}
-.mtB{fill:#bcc6d3}
-.night{display:none}
-.day{display:inline}
-.dawn{fill:url(#dawn)}
-.cloud{fill:url(#cl)}
-.rock{fill:url(#rockD)}
-.wall{fill:url(#wallD)}
-.mason{stroke:#a8987a;opacity:0.4}
-.tree{fill:#7d8a72}
-.house{fill:#e2d8c6;opacity:1}
-.tglow{fill:url(#tgD)}
-.cella{fill:#d3c8b3}
-.col{fill:#f8f4ec;stroke:#a99a7e;stroke-width:0.6}
-.ent{fill:#f3eee4;stroke:#a99a7e;stroke-width:0.6}
-.ped{fill:#eee7da;stroke:#a99a7e;stroke-width:0.6}
-.edge{stroke:#c29a4e;opacity:0.6}
-.base{fill:#e9e1d1;stroke:#a99a7e;stroke-width:0.6}
-}
-</style>
-<defs>
-<linearGradient id="skyN" x1="0" y1="0" x2="0" y2="1">
-<stop offset="0" stop-color="#090d25"/><stop offset="0.4" stop-color="#131939"/><stop offset="0.72" stop-color="#222754"/><stop offset="0.9" stop-color="#363364"/><stop offset="1" stop-color="#463d6c"/>
-</linearGradient>
-<linearGradient id="skyD" x1="0" y1="0" x2="0" y2="1">
-<stop offset="0" stop-color="#bccce0"/><stop offset="0.55" stop-color="#dbe1e6"/><stop offset="1" stop-color="#f0e8da"/>
-</linearGradient>
-<radialGradient id="horN" cx="0.7" cy="1" r="0.65">
-<stop offset="0" stop-color="#a0789a" stop-opacity="0.45"/><stop offset="0.5" stop-color="#6c5a90" stop-opacity="0.2"/><stop offset="1" stop-color="#6c5a90" stop-opacity="0"/>
-</radialGradient>
-<radialGradient id="horD" cx="0.7" cy="1" r="0.65">
-<stop offset="0" stop-color="#fff0d4" stop-opacity="0.8"/><stop offset="1" stop-color="#fff0d4" stop-opacity="0"/>
-</radialGradient>
-<radialGradient id="dawn" cx="0.85" cy="0.72" r="0.5">
-<stop offset="0" stop-color="#ffe9bf" stop-opacity="0.55"/><stop offset="1" stop-color="#ffe9bf" stop-opacity="0"/>
-</radialGradient>
-<linearGradient id="mtAN" x1="0" y1="0" x2="0" y2="1">
-<stop offset="0" stop-color="#2a2a58"/><stop offset="1" stop-color="#171a40"/>
-</linearGradient>
-<radialGradient id="mw">
+.drift{animation:drift 80s ease-in-out infinite alternate}`
+
+const DEFS = `<radialGradient id="mw">
 <stop offset="0" stop-color="#c4bdf0" stop-opacity="0.15"/><stop offset="0.55" stop-color="#9088cc" stop-opacity="0.06"/><stop offset="1" stop-color="#9088cc" stop-opacity="0"/>
 </radialGradient>
 <radialGradient id="mwc">
@@ -261,9 +260,6 @@ ${meteorCss.join('\n')}
 </radialGradient>
 <radialGradient id="wispN">
 <stop offset="0" stop-color="#9c86b8" stop-opacity="0.28"/><stop offset="1" stop-color="#9c86b8" stop-opacity="0"/>
-</radialGradient>
-<radialGradient id="cl">
-<stop offset="0" stop-color="#ffffff" stop-opacity="0.42"/><stop offset="1" stop-color="#ffffff" stop-opacity="0"/>
 </radialGradient>
 <radialGradient id="tg">
 <stop offset="0" stop-color="#f3c065" stop-opacity="0.45"/><stop offset="0.6" stop-color="#d99a4a" stop-opacity="0.12"/><stop offset="1" stop-color="#d99a4a" stop-opacity="0"/>
@@ -291,19 +287,9 @@ ${meteorCss.join('\n')}
 </linearGradient>
 <linearGradient id="metT" x1="0" y1="0" x2="1" y2="0">
 <stop offset="0" stop-color="#c9c2ff" stop-opacity="0"/><stop offset="0.7" stop-color="#f3e6ff" stop-opacity="0.45"/><stop offset="1" stop-color="#fff8e4" stop-opacity="1"/>
-</linearGradient>
-</defs>
-<!-- sky, fills the whole box -->
-<svg width="100%" height="100%" viewBox="0 0 1600 1000" preserveAspectRatio="xMidYMid slice">
-<rect class="sky" x="-10" y="-10" width="1620" height="1020"/>
-<g class="day">
-<rect class="dawn" x="-10" y="-10" width="1620" height="1020"/>
-<g class="drift">
-<g class="cloud">${cloudBanks.join('')}</g>
-</g>
-</g>
-<g class="night">
-<g transform="rotate(${MW.angle} ${MW.cx} ${MW.cy})">
+</linearGradient>`
+
+const NIGHT_SKY = `<g transform="rotate(${MW.angle} ${MW.cx} ${MW.cy})">
 <ellipse class="mw" cx="${MW.cx}" cy="${MW.cy}" rx="760" ry="150"/>
 <ellipse class="mw" cx="${MW.cx + 60}" cy="${MW.cy - 6}" rx="460" ry="78"/>
 <ellipse class="mwc" cx="${MW.cx + 40}" cy="${MW.cy}" rx="300" ry="46"/>
@@ -313,46 +299,23 @@ ${meteorCss.join('\n')}
 ${starGroups}
 ${sparkles}
 <g class="shower">${meteors}</g>
-<g class="wisp drift">${wisps}</g>
-</g>
-<rect class="glow" x="-10" y="520" width="1620" height="490"/>
-<path class="mtA" d="M-10 1010V900C120 878 220 852 330 864S520 898 640 882S860 842 980 856S1200 892 1330 870S1520 842 1610 852V1010Z"/>
-<path class="mtB" d="M-10 1010V950C140 934 300 922 460 936S760 958 920 944S1250 920 1420 934S1560 948 1610 942V1010Z"/>
-</svg>
-<!-- the acropolis on its rock, pinned to the bottom right corner -->
-<svg width="100%" height="100%" viewBox="0 0 1600 1000" preserveAspectRatio="xMaxYMax meet">
-<ellipse class="tglow" cx="1320" cy="820" rx="330" ry="150"/>
-<path class="rock" d="M960 1010C990 980 1030 950 1062 922C1078 906 1090 892 1098 874L1108 846L1116 838L1200 836L1300 834L1420 835L1516 837L1526 846L1540 868C1558 884 1584 896 1610 904V1010Z"/>
-<path class="wall" d="M1116 838L1200 836L1300 834L1420 835L1516 837L1526 850L1518 858L1490 862L1470 870L1420 868L1380 874L1330 870L1280 876L1230 871L1190 875L1150 869L1124 866L1110 856Z"/>
-<path class="mason" d="${masonry.join('')}"/>
-<g class="night house">${houses.join('')}</g>
-<g class="night lit"><g class="la">${lightsA}</g><g class="lb">${lightsB}</g></g>
-<g class="tree">${trees}</g>
-<!-- Propylaea at the west edge -->
-<rect class="cella" x="1128" y="818" width="46" height="18"/>
-<g class="col">${smallCols(1130, 6, 8, 818, 18, 4)}</g>
-<rect class="ent" x="1124" y="812" width="54" height="6"/>
-<!-- Erechtheion -->
-<rect class="cella" x="1180" y="806" width="34" height="22"/>
-<g class="col">${smallCols(1182, 5, 7.5, 808, 20, 4)}</g>
-<rect class="ent" x="1176" y="802" width="42" height="6"/>
-<!-- Parthenon -->
-<rect class="cella" x="${P.left + 6}" y="${P.base - P.colH}" width="${P.right - P.left - 12}" height="${P.colH}"/>
-<rect class="base" x="${P.left - 12}" y="${P.base + 6}" width="${P.right - P.left + 24}" height="5"/>
-<rect class="base" x="${P.left - 8}" y="${P.base + 3}" width="${P.right - P.left + 16}" height="4"/>
-<rect class="base" x="${P.left - 4}" y="${P.base}" width="${P.right - P.left + 8}" height="4"/>
-<g class="col">${pCols.join('')}</g>
-<rect class="ent" x="${P.left - 6}" y="${P.base - P.colH - 15}" width="${P.right - P.left + 12}" height="12"/>
-<path class="ped" d="M${P.left - 10} ${P.base - P.colH - 15}L${(P.left + P.right) / 2} ${P.base - P.colH - 44}L${P.right + 10} ${P.base - P.colH - 15}Z"/>
-<path class="edge" d="M${P.left - 6} ${P.base - P.colH - 9}H${P.right + 6}M${P.left - 10} ${P.base - P.colH - 15}L${(P.left + P.right) / 2} ${P.base - P.colH - 44}L${P.right + 10} ${P.base - P.colH - 15}"/>
-</svg>
-</svg>`
+<g class="wisp drift">${wisps}</g>`
 
-const ts = `// Generated by tools/gen-scene.mjs: the backdrop scene of 撫子的星空主題.
-// Night: a starry sky with the milky way, slow twinkling, a gentle meteor shower and the lit
-// acropolis in the bottom right corner. Day: pale marble with the same acropolis.
-export const SCENE = ${JSON.stringify(svg)}
+const parts = {
+  STYLE,
+  DEFS,
+  NIGHT_SKY,
+  CLOUDS: cloudBanks.join(''),
+  MT_A: 'M-10 1010V900C120 878 220 852 330 864S520 898 640 882S860 842 980 856S1200 892 1330 870S1520 842 1610 852V1010Z',
+  MT_B: 'M-10 1010V950C140 934 300 922 460 936S760 958 920 944S1250 920 1420 934S1560 948 1610 942V1010Z',
+  ACRO_DAY: acro(day, 'day'),
+  ACRO_SHADE: acro(none, 'shade'),
+  ACRO_NIGHT: acro(night, 'night'),
+}
+
+const js = `// Generated by tools/gen-scene.mjs: the parts of the backdrop that do not
+// change with the time of day. hooks/sky.js puts the scene together.
+${Object.entries(parts).map(([k, v]) => `export const ${k} = ${JSON.stringify(v)}`).join('\n')}
 `
-writeFileSync(out, ts)
-writeFileSync(out.replace(/hooks[\\/]scene\.js$/, 'tools/scene.preview.svg'), svg)
-console.log('scene characters:', svg.length)
+writeFileSync(out, js)
+console.log('parts characters:', Object.values(parts).join('').length)

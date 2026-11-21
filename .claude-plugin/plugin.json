@@ -1,10 +1,14 @@
 {
   "name": "starry-acropolis-theme",
-  "version": "1.0.0",
-  "description": "Claude Desktop 星空外觀：古希臘夜空、流星雨與點亮的衛城；白天是淡藍天空。A starry ancient-Greek theme for the Claude Desktop Code tab.",
+  "version": "2.0.0",
+  "description": "Claude Desktop 星空外觀：天色跟著真實的太陽，從清晨、正午、黃昏到星空與流星雨；介面在日出日落時自動切換深淺。A sky over an ancient-Greek acropolis that follows the real sun, for the Claude Desktop Code tab.",
   "author": { "name": "guinea19820623-star", "url": "https://github.com/guinea19820623-star" },
   "homepage": "https://github.com/guinea19820623-star/starry-acropolis-theme",
   "repository": "https://github.com/guinea19820623-star/starry-acropolis-theme",
   "license": "MIT",
-  "keywords": ["theme", "backdrop", "stars", "meteor-shower", "greek"]
+  "keywords": ["theme", "backdrop", "sunrise", "sunset", "stars", "meteor-shower", "greek"],
+  "userConfig": {
+    "latitude": { "type": "number", "title": "Latitude", "description": "Where you are, for sunrise and sunset (north is positive). Default: Taoyuan, Taiwan.", "default": 24.99 },
+    "longitude": { "type": "number", "title": "Longitude", "description": "Where you are, for sunrise and sunset (east is positive). Default: Taoyuan, Taiwan.", "default": 121.3 }
+  }
 }

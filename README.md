@@ -1,10 +1,16 @@
 # Claude Desktop 星空外觀 · Starry Theme
 
-<img src="tools/scene.preview.svg" alt="星空、流星雨與山丘上點亮的古希臘衛城" width="720">
+<img src="docs/night.svg" alt="夜晚：星空、流星雨與山丘上點亮的古希臘衛城" width="720">
 
-替 Claude Desktop 的 Code 分頁換上一片古希臘的夜空：深藍的天、亮金的點綴、大理石白的文字。星星慢慢閃，銀河斜斜劃過，右上方不時落下一場安靜的流星雨；右下角的岩石台地上，衛城的城牆由下往上打著暖光，山腳是一片小小的城市燈火。切到淺色模式，就變成淡藍的白天，雲慢慢飄，衛城換成大理石白。
+替 Claude Desktop 的 Code 分頁開一扇窗，窗外是古希臘的衛城。天色跟著真實的太陽走：黎明時地平線泛起紫粉色，太陽從東邊的山後升起，大理石被晨光染金；白天是淡藍的天和慢慢飄的雲；黃昏時太陽落到衛城後面，神廟先被夕照染成金色，再暗成剪影；入夜後銀河浮現，流星雨從右上方落下，城牆和山腳的燈火一盞盞亮起。介面也會在日出時切成淺色、日落時切成深色。
 
-A theme mod for the Claude Desktop Code tab: a night sky over an ancient Greek acropolis, with slow twinkling stars, the milky way and a gentle meteor shower; by day, a pale blue sky with soft clouds. Colors for both light and dark mode, and a moving vector backdrop.
+A window onto an ancient Greek acropolis for the Claude Desktop Code tab. The sky follows the real sun where you are: dawn, a pale blue day, a golden dusk, and a starry night with the milky way and a gentle meteor shower. The app switches to light mode at sunrise and to dark mode at sunset.
+
+| 清晨 Dawn | 白天 Day |
+| --- | --- |
+| <img src="docs/dawn.svg" width="360" alt="清晨"> | <img src="docs/day.svg" width="360" alt="白天"> |
+| **黃昏 Dusk** | **夜晚 Night** |
+| <img src="docs/dusk.svg" width="360" alt="黃昏"> | <img src="docs/night.svg" width="360" alt="夜晚"> |
 
 這是社群作品，與 Anthropic 無關。This is a community project, not affiliated with Anthropic.
 
@@ -18,38 +24,46 @@ A theme mod for the Claude Desktop Code tab: a night sky over an ancient Greek a
 
 出現 `Add marketplace?` 時按 `y`，再選安裝範圍（user scope 會套用到之後的每個對話）。Answer `y` to add the marketplace, then pick a scope (user scope applies to every session after).
 
-從一般的命令列 (from a shell):
+從一般的命令列，順便設定你所在的位置 (from a shell, setting where you are):
 
 ```
-claude plugin install starry-acropolis-theme --marketplace guinea19820623-star/starry-acropolis-theme
+claude plugin install starry-acropolis-theme --marketplace guinea19820623-star/starry-acropolis-theme --config latitude=25.03 --config longitude=121.56
 ```
 
 在 Claude Desktop 裡 (in the desktop app, where `/plugin` does not run): 點提示框旁的 **+** → **Plugins** → **Add marketplace**，輸入 `guinea19820623-star/starry-acropolis-theme`，再按 **Add plugin**。
 
-## 你會看到 What you get
+已經裝過舊版的話，更新 (to update an earlier install):
 
-- **深色 Dark**：夜空藍的底、暖白的字、亮金的強調色（例如程式碼的關鍵字）；紅、綠、琥珀仍保留原本的意思，只往這個色調靠。星星分五組錯開閃爍，七顆四芒亮星，十顆流星從右上方的輻射點往外放射，平均約三秒一顆。
-- **淺色 Light**：暖米白的底、深藍灰的字、金色強調；淡藍天空、幾團柔雲、右下角的晨光。
-- **衛城 Acropolis**：釘在畫面右下角，避開中間的文字和下方的輸入框，視窗寬窄都會跟著縮放。
-- **減少動態 Reduced motion**：系統開了減少動態時，畫面停成完整的靜態畫，流星會藏起來。
+```
+claude plugin marketplace update starry-acropolis-theme
+claude plugin update starry-acropolis-theme@starry-acropolis-theme
+```
+
+## 你所在的位置 Your location
+
+日出日落依照經緯度計算，預設是台灣桃園（北緯 24.99、東經 121.3）。在別的地方的話，安裝時用 `--config` 設定，或之後在 `/plugin` 的選單裡修改 `latitude`（北為正）和 `longitude`（東為正）。時間以你電腦的時鐘為準，不需要連網。
+
+Sunrise and sunset come from your latitude and longitude (default: Taoyuan, Taiwan). Set `latitude` (north positive) and `longitude` (east positive) with `--config` at install, or later from the `/plugin` menu. It reads your computer's clock and needs no network.
+
+## 怎麼運作 How it works
+
+- 外掛用天文公式算出太陽的高度和方位，把接下來 24 小時的天色排成一段動畫，從現在開始播，所以轉換是連續的；每 15 分鐘重畫一次，電腦睡眠醒來後也會對回正確的時間。The mod computes the sun's altitude and azimuth, lays the next 24 hours out as one CSS animation that starts now, and redraws every 15 minutes to stay on time.
+- 每分鐘看一次太陽，日出切淺色、日落切深色。這會蓋過你在設定裡選的外觀模式。Once a minute it checks the sun and sets light mode from sunrise to sunset; this overrides the appearance you chose in settings.
+- 只在你的電腦上跑，不呼叫模型，也不會在對話裡加任何東西，所以不花 token。It runs locally, never calls the model and adds nothing to the conversation, so it uses no tokens.
+- 系統開了減少動態時，畫面停在「現在」的天色，流星會藏起來。With reduced motion on, the scene rests at the current sky and the meteors hide.
 
 ## 小提醒 Notes
 
 - 同一個對話一次只會有一個主題；裝了別的主題外掛，後套用的會蓋掉前一個。Only one theme stands per session; the last one set wins.
-- Desktop 右側開著瀏覽器或終端機面板時，app 會暫停背景場景，只留主題底色；把面板關掉或獨立開出去，星空就會回來。While the browser or terminal pane is docked, the app pauses the backdrop.
+- Desktop 右側開著瀏覽器或終端機面板時，app 會暫停背景場景，只留主題底色；把面板關掉或獨立開出去，天空就會回來。While the browser or terminal pane is docked, the app pauses the backdrop.
 - 終端機版和編輯器不畫主題。The terminal and editors draw no theme.
 
 ## 自己改 Make it yours
 
-背景是程式產生的純向量 SVG（約 4 萬字元，不含圖片和字型）。改 `tools/gen-scene.mjs` 之後，在外掛資料夾執行：
-
-```
-node tools/gen-scene.mjs hooks/scene.js
-```
-
-它會重寫 `hooks/scene.js`，也會產生 `tools/scene.preview.svg`，用瀏覽器打開就能預覽（深淺色跟著系統模式）。配色在 `hooks/register.tsx`，由 `makeColors` 產生。
-
-The backdrop is a generated pure-vector SVG. Edit `tools/gen-scene.mjs`, run the command above, and open `tools/scene.preview.svg` in a browser to preview it. Colors live in `hooks/register.tsx`.
+- 天色、太陽、夕照和燈光：`hooks/sky.js`，依太陽高度設定的顏色都在 `SKY` 和 `CHANNELS` 裡。Sky colours by sun altitude live in `hooks/sky.js`.
+- 星星、流星、雲和衛城的圖形：改 `tools/gen-scene.mjs`，再執行 `node tools/gen-scene.mjs hooks/parts.js`。The fixed drawing is generated by `tools/gen-scene.mjs`.
+- 預覽一整天：`node tools/preview.mjs tools/preview`，再用瀏覽器打開 `tools/preview/index.html`，會看到今天 12 個時刻的畫面。Preview a whole day with `tools/preview.mjs`.
+- 介面配色：`hooks/register.tsx`，由 `makeColors` 產生，深淺兩套。Interface colours are in `hooks/register.tsx`.
 
 ## 授權 License
 

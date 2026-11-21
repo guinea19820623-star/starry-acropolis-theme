@@ -1,9 +1,11 @@
 import type { Register, ThemeSetArgs } from 'claude-code'
 
 import { makeColors } from './make-colors.js'
-import { SCENE } from './scene.js'
+import { buildScene, isDaytime } from './sky.js'
 
-// 撫子的星空主題: a starry night over the acropolis, a pale blue sky by day.
+// 撫子的星空主題: the sky over the acropolis follows the real sun, from dawn
+// through noon and dusk to a starry night, and the app's light and dark mode
+// follow it too.
 // Colors follow the starry weather frame: night indigo, bright gold, marble white.
 const { theme, problems } = makeColors({
   label: '撫子的星空',
@@ -37,38 +39,74 @@ const { theme, problems } = makeColors({
   },
 })
 
-const LOOK: ThemeSetArgs = {
+
+// Taoyuan, unless the person sets their own place in the plugin's options.
+const DEFAULT_LAT = 24.99
+const DEFAULT_LON = 121.3
+
+const lookFor = (isDay: boolean): ThemeSetArgs => ({
   colors: theme,
   backdrop: { scene: 'starry-temple', glass: { blur: 14, opacity: 0.62 } },
+  overrideColorScheme: isDay ? 'light' : 'dark',
+})
+
+const toNumber = (value: unknown, fallback: number) => {
+  const n = typeof value === 'number' ? value : Number(value)
+
+  return Number.isFinite(n) ? n : fallback
 }
 
-export const register: Register = on => {
+export const register: Register = (on, options) => {
+  const lat = toNumber(options.latitude, DEFAULT_LAT)
+  const lon = toNumber(options.longitude, DEFAULT_LON)
+  let isDay: boolean | undefined
+
   on('session.start', async ($, e, next) => {
     const unpainted = problems.find(line => line.startsWith("Desktop won't paint"))
 
     if (unpainted !== undefined) {
       $.ui.toast(unpainted)
     }
-    const set = await $.theme.set(LOOK)
+    isDay = isDaytime(await $.clock.now(), lat, lon)
+    const set = await $.theme.set(lookFor(isDay))
 
     if (!set.isDrawn) {
       $.ui.status(set.reason)
     }
 
+    // Once a minute: switch light and dark at sunrise and sunset. Every quarter
+    // of an hour: draw the sky again, so it stays on time after a sleep.
+    let minutes = 0
+
+    $.clock.every(60_000, () => {
+      minutes += 1
+      void (async () => {
+        const nowDay = isDaytime(await $.clock.now(), lat, lon)
+
+        if (nowDay !== isDay) {
+          isDay = nowDay
+          await $.theme.set(lookFor(nowDay))
+        } else if (minutes % 15 === 0) {
+          $.ui.invalidate('ui.render')
+        }
+      })()
+    })
+
     return next(e)
   })
 
-  on('ui.render', { component: 'Backdrop' }, ($, e, next) => {
+  on('ui.render', { component: 'Backdrop' }, async ($, e, next) => {
     if ((e.surface !== 'desktop' && e.surface !== 'mobile') || e.props.scene !== 'starry-temple') {
       return next(e)
     }
 
     const { Svg } = $.ui.resolve(e)
+    const source = buildScene(await $.clock.now(), lat, lon)
 
     return (
       <Svg
-        source={SCENE}
-        alt="古希臘衛城坐在岩石台地上，夜裡星星慢慢閃、流星雨從右上方落下；白天是淡藍天空與柔雲"
+        source={source}
+        alt="古希臘衛城坐在岩石台地上，天色跟著真實的太陽變化：清晨、正午、黃昏，到星空與流星雨的夜晚"
         isInteractive
       />
     )
