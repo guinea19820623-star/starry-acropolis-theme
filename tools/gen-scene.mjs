@@ -289,16 +289,7 @@ const DEFS = `<radialGradient id="mw">
 <stop offset="0" stop-color="#c9c2ff" stop-opacity="0"/><stop offset="0.7" stop-color="#f3e6ff" stop-opacity="0.45"/><stop offset="1" stop-color="#fff8e4" stop-opacity="1"/>
 </linearGradient>`
 
-const NIGHT_SKY = `<g transform="rotate(${MW.angle} ${MW.cx} ${MW.cy})">
-<ellipse class="mw" cx="${MW.cx}" cy="${MW.cy}" rx="760" ry="150"/>
-<ellipse class="mw" cx="${MW.cx + 60}" cy="${MW.cy - 6}" rx="460" ry="78"/>
-<ellipse class="mwc" cx="${MW.cx + 40}" cy="${MW.cy}" rx="300" ry="46"/>
-<g class="dust">${dust.join('')}</g>
-<ellipse class="rift" cx="${MW.cx + 30}" cy="${MW.cy + 14}" rx="460" ry="30"/>
-</g>
-${starGroups}
-${sparkles}
-<g class="shower">${meteors}</g>
+const NIGHT_SKY = `<g class="shower">${meteors}</g>
 <g class="wisp drift">${wisps}</g>`
 
 // Snow: flakes in four speeds and three offsets, each falling through the

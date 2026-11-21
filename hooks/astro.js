@@ -50,19 +50,43 @@ function moonEcliptic(d) {
   return { lambda: norm(lambda), beta, dist }
 }
 
+// right ascension and declination (degrees) to altitude and azimuth
+function fromEquatorial(ra, dec, d, lat, lon) {
+  const gmst = 280.46061837 + 360.98564736629 * d
+  const H = (gmst + lon - ra) * R
+  const phi = lat * R
+  const dc = dec * R
+  const alt = Math.asin(Math.sin(phi) * Math.sin(dc) + Math.cos(phi) * Math.cos(dc) * Math.cos(H)) / R
+  const az = norm(Math.atan2(-Math.sin(H), Math.tan(dc) * Math.cos(phi) - Math.sin(phi) * Math.cos(H)) / R)
+  return { alt, az }
+}
+
 // ecliptic longitude and latitude (degrees) to altitude and azimuth
 function horizontal(lambda, beta, d, lat, lon) {
   const e = (23.439 - 0.00000036 * d) * R
   const l = lambda * R
   const b = beta * R
-  const ra = Math.atan2(Math.sin(l) * Math.cos(e) - Math.tan(b) * Math.sin(e), Math.cos(l))
-  const dec = Math.asin(Math.sin(b) * Math.cos(e) + Math.cos(b) * Math.sin(e) * Math.sin(l))
-  const gmst = (280.46061837 + 360.98564736629 * d) * R
-  const H = gmst + lon * R - ra
-  const phi = lat * R
-  const alt = Math.asin(Math.sin(phi) * Math.sin(dec) + Math.cos(phi) * Math.cos(dec) * Math.cos(H)) / R
-  const az = norm(Math.atan2(-Math.sin(H), Math.tan(dec) * Math.cos(phi) - Math.sin(phi) * Math.cos(H)) / R)
-  return { alt, az }
+  const ra = Math.atan2(Math.sin(l) * Math.cos(e) - Math.tan(b) * Math.sin(e), Math.cos(l)) / R
+  const dec = Math.asin(Math.sin(b) * Math.cos(e) + Math.cos(b) * Math.sin(e) * Math.sin(l)) / R
+  return fromEquatorial(ra, dec, d, lat, lon)
+}
+
+/**
+ * A star's altitude and azimuth from its right ascension and declination
+ * (degrees, J2000; precession since then is a fraction of a degree).
+ */
+export function starAt(ra, dec, ms, lat, lon) {
+  return fromEquatorial(ra, dec, days(ms), lat, lon)
+}
+
+// Galactic longitude and latitude (degrees) to right ascension and declination.
+const NGP_RA = 192.85948
+const NGP_DEC = 27.12825
+const NCP_L = 122.93192
+export function galacticToEquatorial(l, b) {
+  const dec = Math.asin(sin(b) * sin(NGP_DEC) + cos(b) * cos(NGP_DEC) * cos(NCP_L - l)) / R
+  const ra = norm(NGP_RA + Math.atan2(cos(b) * sin(NCP_L - l), sin(b) * cos(NGP_DEC) - cos(b) * sin(NGP_DEC) * cos(NCP_L - l)) / R)
+  return { ra, dec }
 }
 
 /** The sun's altitude and azimuth (degrees; azimuth from north, clockwise). */

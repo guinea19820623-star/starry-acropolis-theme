@@ -1,7 +1,7 @@
 import type { EngineInterface, Register, ThemeSetArgs } from 'claude-code'
 
 import { makeColors } from './make-colors.js'
-import { buildScene, isDaytime } from './sky.js'
+import { buildScene, isDaytime, sunAt } from './sky.js'
 
 // 撫子的星空主題: the sky over the acropolis follows the real sun, from dawn
 // through noon and dusk to a starry night, and the app's light and dark mode
@@ -107,20 +107,23 @@ export const register: Register = (on, options) => {
       void checkWeather($, sky)
     }
 
-    // Once a minute: switch light and dark at sunrise and sunset. Every quarter
-    // of an hour: draw the sky again, so it stays on time after a sleep. Every
-    // half hour: look at the weather.
+    // Once a minute: switch light and dark at sunrise and sunset. Draw the sky
+    // again every quarter of an hour, so it stays on time after a sleep, and
+    // every 5 minutes at night, so the stars keep turning. Every half hour:
+    // look at the weather.
     let minutes = 0
 
     $.clock.every(60_000, () => {
       minutes += 1
       void (async () => {
-        const nowDay = isDaytime(await $.clock.now(), lat, lon)
+        const now = await $.clock.now()
+        const nowDay = isDaytime(now, lat, lon)
+        const every = sunAt(now, lat, lon).alt < -6 ? 5 : 15
 
         if (nowDay !== isDay) {
           isDay = nowDay
           await $.theme.set(lookFor(nowDay))
-        } else if (minutes % 15 === 0) {
+        } else if (minutes % every === 0) {
           $.ui.invalidate('ui.render')
         }
         if (weather === 'auto' && minutes % 30 === 0) {

@@ -2,6 +2,8 @@
 // look like from there, as one long CSS animation that starts now.
 import { STYLE, DEFS, NIGHT_SKY, CLOUDS, MT_A, MT_B, ACRO_DAY, ACRO_SHADE, ACRO_NIGHT, SNOW, SNOW_STYLE } from './parts.js'
 import { sunAt, moonAt } from './astro.js'
+import { skyX, skyY } from './projection.js'
+import { STAR_STYLE, starfield } from './starfield.js'
 
 export { sunAt, moonAt }
 
@@ -62,11 +64,6 @@ const CHANNELS = {
   golden: [[-1, 0], [3, 0.38], [10, 0.12], [16, 0]],
   lit: [[-6, 1], [-2, 0]],
 }
-
-// where something at altitude and azimuth sits on the 1600 x 1000 sky:
-// the viewer faces south, east on the left and west on the right
-const skyX = az => 800 + (az - 180) * 6
-const skyY = alt => 860 - Math.sin(Math.max(alt, -8) * R) * 800
 
 function stateAt(ms, lat, lon) {
   const { alt, az } = sunAt(ms, lat, lon)
@@ -201,6 +198,7 @@ export function buildScene(ms, lat, lon, options = {}) {
   return `<svg xmlns="http://www.w3.org/2000/svg" width="100%" height="100%">
 <style>
 ${STYLE}
+${STAR_STYLE}
 ${css}
 ${options.snow ? SNOW_STYLE : ''}
 </style>
@@ -227,6 +225,7 @@ ${sky.map((c, k) => `<stop class="k${k}" offset="${offsets[k]}" stop-color="${c}
 <rect x="-10" y="-10" width="1620" height="1020" fill="url(#sky)"/>
 <g class="ksun" transform="translate(${n0(s.sunX)} ${n0(s.sunY)})" opacity="${n2(s.sun)}"><circle r="190" fill="url(#sunG)"/></g>
 <g class="knight" opacity="${n2(s.night)}">
+${starfield(ms, lat, lon)}
 ${NIGHT_SKY}
 </g>
 <g class="kmoon" transform="translate(${n0(s.moonX)} ${n0(s.moonY)})" opacity="${n2(s.moon)}">${face}</g>

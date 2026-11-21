@@ -18,3 +18,9 @@ export declare function moonAt(
   shadow: number
   radius: number
 }
+
+/** A star's altitude and azimuth from right ascension and declination (degrees, J2000). */
+export declare function starAt(ra: number, dec: number, ms: number, lat: number, lon: number): { alt: number; az: number }
+
+/** Galactic longitude and latitude (degrees) to right ascension and declination. */
+export declare function galacticToEquatorial(l: number, b: number): { ra: number; dec: number }

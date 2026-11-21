@@ -1,7 +1,7 @@
 {
   "name": "starry-acropolis-theme",
-  "version": "3.0.0",
-  "description": "Claude Desktop 星空外觀：天色跟著真實的太陽，月亮照真實的位置與月相（含月食），當地下雪時飄雪；介面在日出日落時自動切換深淺。A sky over an ancient-Greek acropolis that follows the real sun and moon, for the Claude Desktop Code tab.",
+  "version": "4.0.0",
+  "description": "Claude Desktop 星空外觀：真實的星空（希臘神話星座、銀河、仙女座星系）、太陽與月亮（含月食），當地下雪時飄雪；介面在日出日落時自動切換深淺。A sky over an ancient-Greek acropolis with the real stars, constellations, milky way, sun and moon, for the Claude Desktop Code tab.",
   "author": {
     "name": "guinea19820623-star",
     "url": "https://github.com/guinea19820623-star"
@@ -12,12 +12,14 @@
   "keywords": [
     "theme",
     "backdrop",
+    "constellations",
+    "milky-way",
+    "stars",
     "sunrise",
     "sunset",
     "moon",
     "lunar-eclipse",
     "snow",
-    "stars",
     "meteor-shower",
     "greek"
   ],
