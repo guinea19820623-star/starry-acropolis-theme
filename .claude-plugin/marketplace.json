@@ -1,0 +1,6 @@
+{
+  "name": "starry-acropolis-theme",
+  "owner": { "name": "guinea19820623-star" },
+  "description": "Claude Desktop 星空外觀：古希臘星空與流星雨主題 / A starry acropolis theme for the Claude Desktop Code tab",
+  "plugins": [{ "name": "starry-acropolis-theme", "source": "./" }]
+}

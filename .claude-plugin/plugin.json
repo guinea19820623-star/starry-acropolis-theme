@@ -1,0 +1,10 @@
+{
+  "name": "starry-acropolis-theme",
+  "version": "1.0.0",
+  "description": "Claude Desktop 星空外觀：古希臘夜空、流星雨與點亮的衛城；白天是淡藍天空。A starry ancient-Greek theme for the Claude Desktop Code tab.",
+  "author": { "name": "guinea19820623-star", "url": "https://github.com/guinea19820623-star" },
+  "homepage": "https://github.com/guinea19820623-star/starry-acropolis-theme",
+  "repository": "https://github.com/guinea19820623-star/starry-acropolis-theme",
+  "license": "MIT",
+  "keywords": ["theme", "backdrop", "stars", "meteor-shower", "greek"]
+}
