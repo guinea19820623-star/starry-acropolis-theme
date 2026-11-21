@@ -8,3 +8,5 @@ export declare const MT_B: string
 export declare const ACRO_DAY: string
 export declare const ACRO_SHADE: string
 export declare const ACRO_NIGHT: string
+export declare const SNOW: string
+export declare const SNOW_STYLE: string

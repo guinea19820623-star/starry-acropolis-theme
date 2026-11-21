@@ -1,31 +1,12 @@
 // The sky for a given moment: where the sun is, and what the next 24 hours
 // look like from there, as one long CSS animation that starts now.
-import { STYLE, DEFS, NIGHT_SKY, CLOUDS, MT_A, MT_B, ACRO_DAY, ACRO_SHADE, ACRO_NIGHT } from './parts.js'
+import { STYLE, DEFS, NIGHT_SKY, CLOUDS, MT_A, MT_B, ACRO_DAY, ACRO_SHADE, ACRO_NIGHT, SNOW, SNOW_STYLE } from './parts.js'
+import { sunAt, moonAt } from './astro.js'
+
+export { sunAt, moonAt }
 
 const R = Math.PI / 180
 const DAY_MS = 86400000
-
-/**
- * The sun's altitude and azimuth (degrees; azimuth from north, clockwise) at
- * `ms` (milliseconds since the epoch) seen from `lat`, `lon`. Accurate to
- * well under a degree, which is plenty for a sky.
- */
-export function sunAt(ms, lat, lon) {
-  const d = ms / DAY_MS + 2440587.5 - 2451545.0
-  const g = (357.529 + 0.98560028 * d) * R
-  const q = 280.459 + 0.98564736 * d
-  const L = (q + 1.915 * Math.sin(g) + 0.02 * Math.sin(2 * g)) * R
-  const e = (23.439 - 0.00000036 * d) * R
-  const ra = Math.atan2(Math.cos(e) * Math.sin(L), Math.cos(L))
-  const dec = Math.asin(Math.sin(e) * Math.sin(L))
-  const gmst = (280.46061837 + 360.98564736629 * d) * R
-  const H = gmst + lon * R - ra
-  const phi = lat * R
-  const alt = Math.asin(Math.sin(phi) * Math.sin(dec) + Math.cos(phi) * Math.cos(dec) * Math.cos(H))
-  let az = Math.atan2(-Math.sin(H), Math.tan(dec) * Math.cos(phi) - Math.sin(phi) * Math.cos(H)) / R
-  if (az < 0) az += 360
-  return { alt: alt / R, az }
-}
 
 /** Whether the app should be in its light mode: from sunrise to sunset. */
 export function isDaytime(ms, lat, lon) {
@@ -82,8 +63,14 @@ const CHANNELS = {
   lit: [[-6, 1], [-2, 0]],
 }
 
+// where something at altitude and azimuth sits on the 1600 x 1000 sky:
+// the viewer faces south, east on the left and west on the right
+const skyX = az => 800 + (az - 180) * 6
+const skyY = alt => 860 - Math.sin(Math.max(alt, -8) * R) * 800
+
 function stateAt(ms, lat, lon) {
   const { alt, az } = sunAt(ms, lat, lon)
+  const moon = moonAt(ms, lat, lon)
   const v = name => at(CHANNELS[name], alt)
   return {
     sky: [0, 1, 2, 3, 4].map(k => at(skyStop(k), alt)),
@@ -94,9 +81,12 @@ function stateAt(ms, lat, lon) {
     glowOpacity: v('glowOpacity'),
     sun: v('sun'),
     sunColor: v('sunColor'),
-    // the viewer faces south: east on the left, west on the right
-    sunX: 800 + (az - 180) * 6,
-    sunY: 860 - Math.sin(Math.max(alt, -8) * R) * 800,
+    sunX: skyX(az),
+    sunY: skyY(alt),
+    moonX: skyX(moon.az),
+    moonY: skyY(moon.alt),
+    // up above the hills, paler by day
+    moon: at([[-2, 0], [1, 1]], moon.alt) * at([[-6, 1], [4, 0.6]], alt),
     mtA: v('mtA'),
     mtB: v('mtB'),
     shade: v('shade'),
@@ -109,32 +99,65 @@ function stateAt(ms, lat, lon) {
 
 const n2 = x => Math.round(x * 100) / 100
 const n0 = x => Math.round(x)
-const pos = s => `translate(${n0(s.sunX)}px,${n0(s.sunY)}px)`
+const translate = ([x, y]) => `translate(${n0(x)}px,${n0(y)}px)`
 
-// Each animated element: its class, and the CSS properties it animates.
+// Each animated element: its class, and the CSS properties it animates, each
+// a colour (c), a number (n) or a place on the sky (p, which counts only while
+// the element can be seen).
 const ELEMENTS = [
-  ...[0, 1, 2, 3, 4].map(k => ({ cls: `k${k}`, props: [['stop-color', s => s.sky[k]]] })),
-  { cls: 'khor', props: [['stop-color', s => s.glowColor], ['stop-opacity', s => n2(s.glowOpacity)]] },
-  { cls: 'ksun', props: [['transform', pos], ['opacity', s => n2(s.sun)]] },
-  { cls: 'ksunc', props: [['stop-color', s => s.sunColor]] },
-  { cls: 'knight', props: [['opacity', s => n2(s.night)]] },
-  { cls: 'kcloud', props: [['opacity', s => n2(s.cloud)]] },
-  { cls: 'kclc', props: [['stop-color', s => s.cloudColor]] },
-  { cls: 'kmta', props: [['fill', s => s.mtA]] },
-  { cls: 'kmtb', props: [['fill', s => s.mtB]] },
-  { cls: 'kshade', props: [['opacity', s => n2(s.shade)]] },
-  { cls: 'kgold', props: [['opacity', s => n2(s.golden)]] },
-  { cls: 'klit', props: [['opacity', s => n2(s.lit)]] },
+  ...[0, 1, 2, 3, 4].map(k => ({ cls: `k${k}`, props: [['stop-color', s => s.sky[k], 'c']] })),
+  { cls: 'khor', props: [['stop-color', s => s.glowColor, 'c'], ['stop-opacity', s => n2(s.glowOpacity), 'n']] },
+  { cls: 'ksun', seen: s => s.sun, props: [['transform', s => [s.sunX, s.sunY], 'p'], ['opacity', s => n2(s.sun), 'n']] },
+  { cls: 'ksunc', props: [['stop-color', s => s.sunColor, 'c']] },
+  { cls: 'kmoon', seen: s => s.moon, props: [['transform', s => [s.moonX, s.moonY], 'p'], ['opacity', s => n2(s.moon), 'n']] },
+  { cls: 'knight', props: [['opacity', s => n2(s.night), 'n']] },
+  { cls: 'kcloud', props: [['opacity', s => n2(s.cloud), 'n']] },
+  { cls: 'kclc', props: [['stop-color', s => s.cloudColor, 'c']] },
+  { cls: 'kmta', props: [['fill', s => s.mtA, 'c']] },
+  { cls: 'kmtb', props: [['fill', s => s.mtB, 'c']] },
+  { cls: 'kshade', props: [['opacity', s => n2(s.shade), 'n']] },
+  { cls: 'kgold', props: [['opacity', s => n2(s.golden), 'n']] },
+  { cls: 'klit', props: [['opacity', s => n2(s.lit), 'n']] },
 ]
 
 const colorGap = (a, b) => Math.max(...toRgb(a).map((c, k) => Math.abs(c - toRgb(b)[k])))
 
-// How far two states are apart, so still stretches of the day need few keyframes.
-function differs(a, b) {
-  if (a.sky.some((c, k) => colorGap(c, b.sky[k]) > 5)) return true
-  for (const key of ['cloudColor', 'glowColor', 'sunColor', 'mtA', 'mtB']) if (colorGap(a[key], b[key]) > 5) return true
-  for (const key of ['night', 'cloud', 'glowOpacity', 'sun', 'shade', 'golden', 'lit']) if (Math.abs(a[key] - b[key]) > 0.03) return true
-  return a.sun > 0 && Math.hypot(a.sunX - b.sunX, a.sunY - b.sunY) > 50
+// Whether an element looks different between two states, so the still
+// stretches of its day need few keyframes.
+function differs({ seen, props }, a, b) {
+  return props.some(([, get, kind]) => {
+    const [x, y] = [get(a), get(b)]
+    if (kind === 'c') return colorGap(x, y) > 5
+    if (kind === 'n') return Math.abs(x - y) > 0.03
+    return (seen(a) > 0 || seen(b) > 0) && Math.hypot(x[0] - y[0], x[1] - y[1]) > 50
+  })
+}
+
+// The moon's face for the moment it is drawn: its phase, lit side turned
+// toward the sun, or Earth's shadow across it during an eclipse.
+const MOON_R = 24
+const MARIA = '<circle cx="-7" cy="-6" r="7"/><circle cx="6" cy="-9" r="5"/><circle cx="4" cy="5" r="8"/><circle cx="-9" cy="9" r="4"/>'
+
+function moonFace(m, sun) {
+  const r = MOON_R
+  const turn = (Math.atan2(skyY(sun.alt) - skyY(m.alt), skyX(sun.az) - skyX(m.az)) * 180) / Math.PI
+  const inShadow = m.umbra > 0
+  const glow = `<circle r="90" fill="url(#moonG)" opacity="${n2(0.25 + 0.75 * m.lit)}"/>`
+  if (inShadow || (m.penumbral && m.lit > 0.97)) {
+    // full moon in Earth's shadow: the umbra bites in, and turns it copper when total
+    const scale = r / m.radius
+    const total = m.umbra >= 1
+    const shadow = inShadow
+      ? `<circle cx="${n2(m.dx * scale)}" cy="${n2(m.dy * scale)}" r="${n2(m.shadow * scale * 1.06)}" fill="#5a2416" opacity="0.35" clip-path="url(#moonDisk)"/>` +
+        `<circle cx="${n2(m.dx * scale)}" cy="${n2(m.dy * scale)}" r="${n2(m.shadow * scale)}" fill="${total ? '#9a3a22' : '#3e1a14'}" opacity="${total ? 0.82 : 0.9}" clip-path="url(#moonDisk)"/>`
+      : ''
+    return `${total ? '' : glow}<clipPath id="moonDisk"><circle r="${r}"/></clipPath>` +
+      `<circle r="${r}" fill="#f2efe4" opacity="${m.penumbral ? 0.88 : 1}"/><g fill="#d9d4c6" opacity="0.3">${MARIA}</g>${shadow}`
+  }
+  const rx = n2(r * Math.abs(1 - 2 * m.lit))
+  const sweep = m.lit < 0.5 ? 0 : 1
+  return `${glow}<clipPath id="moonLit"><path transform="rotate(${n2(turn)})" d="M0 -${r}A${r} ${r} 0 0 1 0 ${r}A${rx} ${r} 0 0 ${sweep} 0 -${r}Z"/></clipPath>` +
+    `<g clip-path="url(#moonLit)"><circle r="${r}" fill="#f4f1e6"/><g fill="#d9d4c6" opacity="0.3">${MARIA}</g></g>`
 }
 
 const STEP_MS = 10 * 60 * 1000
@@ -145,30 +168,33 @@ const STEPS = DAY_MS / STEP_MS
  * markup holds the sky as it is now, so it is right with animation taken out;
  * its animation carries the sky through the next 24 hours.
  */
-export function buildScene(ms, lat, lon) {
+export function buildScene(ms, lat, lon, options = {}) {
   const states = []
   for (let k = 0; k <= STEPS; k++) states.push(stateAt(ms + k * STEP_MS, lat, lon))
 
-  // keep the keyframes where something changes, and the one just before each
-  const keep = new Set([0, STEPS])
-  let last = 0
-  for (let k = 1; k < STEPS; k++) {
-    if (differs(states[k], states[last])) {
-      keep.add(k - 1)
-      keep.add(k)
-      last = k
+  // each element keeps the keyframes where it changes, and the one just before each
+  const css = ELEMENTS.map(el => {
+    const keep = new Set([0, STEPS])
+    let last = 0
+    for (let k = 1; k < STEPS; k++) {
+      if (differs(el, states[k], states[last])) {
+        keep.add(k - 1)
+        keep.add(k)
+        last = k
+      }
     }
-  }
-  const frames = [...keep].sort((a, b) => a - b)
-
-  const css = ELEMENTS.map(({ cls, props }) => {
-    const steps = frames
-      .map(k => `${n2((k / STEPS) * 100)}%{${props.map(([p, get]) => `${p}:${get(states[k])}`).join(';')}}`)
+    const steps = [...keep]
+      .sort((a, b) => a - b)
+      .map(k => {
+        const values = el.props.map(([prop, get, kind]) => `${prop}:${kind === 'p' ? translate(get(states[k])) : get(states[k])}`)
+        return `${n2((k / STEPS) * 100)}%{${values.join(';')}}`
+      })
       .join('')
-    return `@keyframes ${cls}{${steps}}\n.${cls}{animation:${cls} 86400s linear infinite}`
+    return `@keyframes ${el.cls}{${steps}}\n.${el.cls}{animation:${el.cls} 86400s linear infinite}`
   }).join('\n')
 
   const s = states[0]
+  const face = moonFace(moonAt(ms, lat, lon), sunAt(ms, lat, lon))
   const sky = s.sky
   const offsets = [0, 0.4, 0.72, 0.9, 1]
 
@@ -176,6 +202,7 @@ export function buildScene(ms, lat, lon) {
 <style>
 ${STYLE}
 ${css}
+${options.snow ? SNOW_STYLE : ''}
 </style>
 <defs>
 ${DEFS}
@@ -188,6 +215,9 @@ ${sky.map((c, k) => `<stop class="k${k}" offset="${offsets[k]}" stop-color="${c}
 <radialGradient id="sunG">
 <stop offset="0" stop-color="#fffaf0"/><stop class="ksunc" offset="0.1" stop-color="${s.sunColor}"/><stop class="ksunc" offset="0.2" stop-color="${s.sunColor}" stop-opacity="0.4"/><stop offset="0.5" stop-color="#ffd9a0" stop-opacity="0.12"/><stop offset="1" stop-color="#ffd9a0" stop-opacity="0"/>
 </radialGradient>
+<radialGradient id="moonG">
+<stop offset="0" stop-color="#eef0ff" stop-opacity="0.35"/><stop offset="1" stop-color="#eef0ff" stop-opacity="0"/>
+</radialGradient>
 <radialGradient id="cl">
 <stop class="kclc" offset="0" stop-color="${s.cloudColor}" stop-opacity="0.42"/><stop offset="1" stop-color="#ffffff" stop-opacity="0"/>
 </radialGradient>
@@ -199,6 +229,7 @@ ${sky.map((c, k) => `<stop class="k${k}" offset="${offsets[k]}" stop-color="${c}
 <g class="knight" opacity="${n2(s.night)}">
 ${NIGHT_SKY}
 </g>
+<g class="kmoon" transform="translate(${n0(s.moonX)} ${n0(s.moonY)})" opacity="${n2(s.moon)}">${face}</g>
 <g class="kcloud" opacity="${n2(s.cloud)}"><g class="drift" fill="url(#cl)">${CLOUDS}</g></g>
 <rect x="-10" y="520" width="1620" height="490" fill="url(#hor)"/>
 <path class="kmta" fill="${s.mtA}" d="${MT_A}"/>
@@ -210,6 +241,8 @@ ${ACRO_DAY}
 <g class="kgold" fill="#ffaa4a" opacity="${n2(s.golden)}">${ACRO_SHADE}</g>
 <g class="kshade" fill="#1b1733" opacity="${n2(s.shade)}">${ACRO_SHADE}</g>
 <g class="klit" opacity="${n2(s.lit)}">${ACRO_NIGHT}</g>
-</svg>
+</svg>${options.snow ? `
+<!-- snow, over everything -->
+<svg width="100%" height="100%" viewBox="0 0 1600 1000" preserveAspectRatio="xMidYMid slice"><g class="snow">${SNOW}</g></svg>` : ''}
 </svg>`
 }

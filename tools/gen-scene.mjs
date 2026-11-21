@@ -301,7 +301,26 @@ ${sparkles}
 <g class="shower">${meteors}</g>
 <g class="wisp drift">${wisps}</g>`
 
+// Snow: flakes in four speeds and three offsets, each falling through the
+// whole box and drifting a little from side to side. With motion taken out
+// they rest where they are drawn, scattered over the scene.
+const flakes = []
+for (let i = 0; i < 140; i++) {
+  const r = f(2.6 + rnd() * 3.6)
+  flakes.push(`<circle class="f${i % 4} g${i % 3}" cx="${f(rnd() * 1600)}" cy="${f(rnd() * 1000)}" r="${r}"/>`)
+}
+const SNOW_STYLE = `.snow circle{fill:url(#flake)}
+@keyframes sn{0%{transform:translate(0px,-1100px)}25%{transform:translate(16px,-550px)}50%{transform:translate(0px,0px)}75%{transform:translate(-16px,550px)}100%{transform:translate(0px,1100px)}}
+.f0{animation:sn 26s linear infinite}
+.f1{animation:sn 32s linear infinite}
+.f2{animation:sn 38s linear infinite}
+.f3{animation:sn 46s linear infinite}
+.g1{animation-delay:-11s}
+.g2{animation-delay:-23s}`
+
 const parts = {
+  SNOW: '<defs><radialGradient id="flake"><stop offset="0" stop-color="#ffffff"/><stop offset="0.5" stop-color="#f4f8ff" stop-opacity="0.9"/><stop offset="1" stop-color="#e6eefa" stop-opacity="0"/></radialGradient></defs>' + flakes.join(''),
+  SNOW_STYLE,
   STYLE,
   DEFS,
   NIGHT_SKY,
