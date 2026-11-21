@@ -20,7 +20,11 @@ export function starY(alt) {
   return HORIZON - K * Math.log(Math.tan((45 + Math.min(alt, 89.5) / 2) * R))
 }
 
-/** The y of an altitude for the sun and moon: kept on screen when high, behind the hills when set. */
+/**
+ * The y of an altitude for the sun and moon: behind the hills when set, and
+ * like the stars when high, so near the zenith they pass off the top of the
+ * view instead of sliding along its edge.
+ */
 export function skyY(alt) {
-  return starY(Math.max(-8, Math.min(alt, 74)))
+  return starY(Math.max(-8, alt))
 }
