@@ -76,13 +76,13 @@ echo '{"weather":"snow"}' | claude plugin configure starry-acropolis-theme@starr
 
 - 外掛用天文公式算出太陽和月亮的高度、方位與月相（月亮用 Meeus《Astronomical Algorithms》的主要項，誤差約零點幾度）。月食依月亮進入地球本影的深度判斷：2026-03-03 的月全食算出本影食分 1.14（實際 1.15），2026-08-28 的月偏食算出 0.94（實際 0.93）。The sun and moon come from standard astronomical series (Meeus' main lunar terms); the eclipse check gives 1.14 for the total lunar eclipse of 2026-03-03 (actual 1.15).
 - 接下來 24 小時的天色、太陽和月亮的路徑排成一段動畫，從現在開始播，所以轉換是連續的；每 15 分鐘重畫一次，電腦睡眠醒來後也會對回正確的時間。The next 24 hours are laid out as one CSS animation that starts now, redrawn every 15 minutes to stay on time.
-- 每分鐘看一次太陽，日出切淺色、日落切深色。這會蓋過你在設定裡選的外觀模式。Once a minute it checks the sun and sets light mode from sunrise to sunset; this overrides the appearance you chose in settings.
+- 每分鐘看一次太陽，日出切淺色、日落切深色（只在星空是目前的主題時）。這會蓋過你在設定裡選的外觀模式。Once a minute, while the sky is the theme, it checks the sun and sets light mode from sunrise to sunset; this overrides the appearance you chose in settings.
 - 不呼叫模型，也不會在對話裡加任何東西，所以不花 token。It never calls the model and adds nothing to the conversation, so it uses no tokens.
 - 系統開了減少動態時，畫面停在「現在」的天空，流星藏起來，雪花停成靜止的雪景。With reduced motion on, the scene rests at the current sky.
 
 ## 小提醒 Notes
 
-- 同一個對話一次只會有一個主題；裝了別的主題外掛，後套用的會蓋掉前一個。Only one theme stands per session; the last one set wins.
+- 同一個對話一次只會有一個主題；裝了別的主題外掛，後套用的會蓋掉前一個。要換主題，請到 **+ → Plugins** 把不用的主題外掛關掉，再開新對話。別的主題接手後，星空就不再切換深淺、也不查天氣，不會蓋回去。Only one theme stands per session; the last one set wins. To switch themes, turn the other theme plugin off under **+ → Plugins** and open a new session. Once another theme takes over, the sky stops switching light and dark (and stops checking the weather), so it never takes that theme's place again.
 - Desktop 右側開著瀏覽器或終端機面板時，app 會暫停背景場景，只留主題底色；把面板關掉或獨立開出去，天空就會回來。While the browser or terminal pane is docked, the app pauses the backdrop.
 - 終端機版和編輯器不畫主題。The terminal and editors draw no theme.
 
